@@ -3,12 +3,45 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const port = process.env.PORT || 3000;
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 app.use(cors());
 app.use(express.json());
 
+const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.q9crcyr.mongodb.net/?appName=Cluster0`;
+
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+});
+
+const db = client.db('HomeNestDB');
+const ListingCollections = db.collection('Listing');
+
+const run = async () => {
+  try {
+    await client.connect;
+
+    app.get('/listing', async (req, res) => {
+      const result = await ListingCollections.find().toArray();
+      res.send(result);
+    });
+    await client.db('admin').command({ ping: 1 });
+    console.log(
+      'Pinged your deployment. You successfully connected to MongoDB!'
+    );
+  } finally {
+    // await client.close();
+  }
+};
+
+run().catch(console.dir);
+
 app.get('/', (req, res) => {
-  res.send('hello world');
+  res.send('This is Home Nest Project Server');
 });
 
 app.listen(port, () => {
