@@ -19,16 +19,33 @@ const client = new MongoClient(uri, {
 });
 
 const db = client.db('HomeNestDB');
-const ListingCollections = db.collection('Listing');
+const listingCollections = db.collection('Listing');
 
 const run = async () => {
   try {
     await client.connect;
 
     app.get('/listing', async (req, res) => {
-      const result = await ListingCollections.find().toArray();
+      const result = await listingCollections.find().toArray();
       res.send(result);
     });
+
+    app.get('/my-listing', async (req, res) => {
+      const email = req.query.email;
+      const query = {};
+      if (email) {
+        query.email = email;
+      }
+      const result = await listingCollections.find(query).toArray();
+      res.send(result);
+    });
+
+    app.post('/listing', async (req, res) => {
+      const data = req.body;
+      const result = await listingCollections.insertOne(data);
+      res.send(result);
+    });
+
     await client.db('admin').command({ ping: 1 });
     console.log(
       'Pinged your deployment. You successfully connected to MongoDB!'
