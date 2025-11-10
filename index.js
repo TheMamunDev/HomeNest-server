@@ -25,8 +25,12 @@ const run = async () => {
   try {
     await client.connect;
 
-    app.get('/listing', async (req, res) => {
-      const result = await listingCollections.find().toArray();
+    app.get('/featured-listing', async (req, res) => {
+      const result = await listingCollections
+        .find()
+        .limit(6)
+        .sort({ createdAt: -1 })
+        .toArray();
       res.send(result);
     });
 
