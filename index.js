@@ -20,11 +20,13 @@ const client = new MongoClient(uri, {
 
 const db = client.db('HomeNestDB');
 const listingCollections = db.collection('Listing');
+const ratingCollections = db.collection('Ratings');
 
 const run = async () => {
   try {
     await client.connect;
 
+    // Fetch Data Api Start..................................
     app.get('/featured-listing', async (req, res) => {
       const result = await listingCollections
         .find()
@@ -43,6 +45,20 @@ const run = async () => {
       const result = await listingCollections.find(query).toArray();
       res.send(result);
     });
+
+    app.get('/listing/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await listingCollections.findOne(query);
+      res.send(result);
+    });
+
+    app.get('/ratings', async (req, res) => {
+      const result = await ratingCollections.find().toArray();
+      res.send(result);
+    });
+
+    // Fetch Data Api End..................................
 
     app.patch('/my-listing/:id', async (req, res) => {
       const id = req.params.id;
@@ -67,6 +83,12 @@ const run = async () => {
     app.post('/listing', async (req, res) => {
       const data = req.body;
       const result = await listingCollections.insertOne(data);
+      res.send(result);
+    });
+
+    app.post('/ratings', async (req, res) => {
+      const data = req.body;
+      const result = await ratingCollections.insertOne(data);
       res.send(result);
     });
 
