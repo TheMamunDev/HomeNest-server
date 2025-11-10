@@ -13,7 +13,7 @@ const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
-    strict: true,
+    strict: false,
     deprecationErrors: true,
   },
 });
@@ -53,9 +53,76 @@ const run = async () => {
       res.send(result);
     });
 
-    app.get('/ratings', async (req, res) => {
-      const result = await ratingCollections.find().toArray();
+    app.get('/ratings/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { propertyId: id };
+      const result = await ratingCollections.find(query).limit(5).toArray();
       res.send(result);
+    });
+
+    app.get('/my-ratings', async (req, res) => {
+      const email = req.query.email;
+      const query = {};
+      if (email) {
+        query.reviewerEmail = email;
+      }
+      const result = await ratingCollections.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get('/categories', async (req, res) => {
+      try {
+        const categories = await listingCollections.distinct('category');
+        res.send(categories);
+      } catch (error) {
+        res.status(500).send({ message: error.message });
+      }
+    });
+    app.get('/price-range', async (req, res) => {
+      try {
+        const prices = await listingCollections
+          .find()
+          .project({ price: 1 })
+          .toArray();
+        const allPrices = prices.map(p => p.price);
+        const minPrice = Math.min(...allPrices);
+        const maxPrice = Math.max(...allPrices);
+        res.send({ minPrice, maxPrice });
+      } catch (error) {
+        res.status(500).send({ message: error.message });
+      }
+    });
+
+    app.get('/listings', async (req, res) => {
+      try {
+        const { category, minPrice, maxPrice, location, sort } = req.query;
+
+        const filter = {};
+        if (category && category !== 'All') {
+          filter.category = category;
+        }
+        if (location) {
+          filter.location = { $regex: location, $options: 'i' };
+        }
+        if (minPrice || maxPrice) {
+          filter.price = {};
+          if (minPrice) filter.price.$gte = Number(minPrice);
+          if (maxPrice) filter.price.$lte = Number(maxPrice);
+        }
+        let sortObj = {};
+        if (sort === 'price-asc') sortObj = { price: 1 };
+        else if (sort === 'price-desc') sortObj = { price: -1 };
+        else if (sort === 'latest') sortObj = { createdAt: -1 };
+
+        const result = await listingCollections
+          .find(filter)
+          .sort(sortObj)
+          .toArray();
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.send(error);
+      }
     });
 
     // Fetch Data Api End..................................
