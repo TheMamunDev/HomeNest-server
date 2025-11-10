@@ -44,6 +44,26 @@ const run = async () => {
       res.send(result);
     });
 
+    app.patch('/my-listing/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      console.log(query);
+      const { _id, ...data } = req.body;
+      console.log(data);
+      const updatedData = {
+        $set: data,
+      };
+      const result = await listingCollections.updateOne(query, updatedData);
+      res.send(result);
+    });
+
+    app.delete('/my-listing/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await listingCollections.deleteOne(query);
+      res.send(result);
+    });
+
     app.post('/listing', async (req, res) => {
       const data = req.body;
       const result = await listingCollections.insertOne(data);
