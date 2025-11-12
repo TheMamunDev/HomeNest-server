@@ -10,9 +10,9 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.q9crcyr.mongodb.net/?appName=Cluster0`;
 
-var admin = require('firebase-admin');
+const admin = require('firebase-admin');
 
-var serviceAccount = require('./homenest-firebase-admin.json');
+const serviceAccount = require('./homenest-firebase-admin.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
