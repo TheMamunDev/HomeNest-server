@@ -10,6 +10,12 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.q9crcyr.mongodb.net/?appName=Cluster0`;
 
+var admin = require('firebase-admin');
+
+var serviceAccount = require('./homenest-firebase-admin.json');
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -17,6 +23,23 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+const secureApi = async (req, res, next) => {
+  const authorization = req.headers.authorization;
+  // console.log(req.headers.authorization);
+  if (!authorization) {
+    return res.status(401).send({ message: 'Unauthorized access' });
+  }
+  const token = authorization.split(' ')[1];
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    console.log(decoded);
+    req.token_email = decoded.email;
+    next();
+  } catch (error) {
+    return res.status(401).send({ message: 'Unauthorized access' });
+  }
+};
 
 const db = client.db('HomeNestDB');
 const listingCollections = db.collection('Listing');
@@ -36,11 +59,15 @@ const run = async () => {
       res.send(result);
     });
 
-    app.get('/my-listing', async (req, res) => {
+    app.get('/my-listing', secureApi, async (req, res) => {
       const email = req.query.email;
       const query = {};
+
       if (email) {
         query.email = email;
+        if (email !== req.token_email) {
+          return res.status(403).send({ message: 'Forbidden access' });
+        }
       }
       const result = await listingCollections.find(query).toArray();
       res.send(result);
@@ -95,14 +122,25 @@ const run = async () => {
 
     app.get('/listings', async (req, res) => {
       try {
-        const { category, minPrice, maxPrice, location, sort } = req.query;
+        const {
+          category,
+          minPrice,
+          maxPrice,
+          propertyName,
+          sort,
+          _start,
+          _limit,
+        } = req.query;
 
+        // console.log(req.query);
+        const start = parseInt(_start) || 0;
+        const limit = parseInt(_limit) || 9;
         const filter = {};
         if (category && category !== 'All') {
           filter.category = category;
         }
-        if (location) {
-          filter.location = { $regex: location, $options: 'i' };
+        if (propertyName) {
+          filter.propertyName = { $regex: propertyName, $options: 'i' };
         }
         if (minPrice || maxPrice) {
           filter.price = {};
@@ -114,11 +152,15 @@ const run = async () => {
         else if (sort === 'price-desc') sortObj = { price: -1 };
         else if (sort === 'latest') sortObj = { createdAt: -1 };
 
+        const totalCount = await listingCollections.countDocuments(filter);
+
         const result = await listingCollections
           .find(filter)
           .sort(sortObj)
+          .skip(start)
+          .limit(limit)
           .toArray();
-        res.send(result);
+        res.send({ data: result, total: totalCount });
       } catch (error) {
         console.error(error);
         res.send(error);
