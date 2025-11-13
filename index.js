@@ -73,7 +73,10 @@ const run = async () => {
           return res.status(403).send({ message: 'Forbidden access' });
         }
       }
-      const result = await listingCollections.find(query).toArray();
+      const result = await listingCollections
+        .find(query)
+        .sort({ createdAt: -1 })
+        .toArray();
       res.send(result);
     });
 
@@ -100,7 +103,10 @@ const run = async () => {
       if (email) {
         query.reviewerEmail = email;
       }
-      const result = await ratingCollections.find(query).toArray();
+      const result = await ratingCollections
+        .find(query)
+        .sort({ reviewed: -1 })
+        .toArray();
       res.send(result);
     });
 
