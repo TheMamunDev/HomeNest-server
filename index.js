@@ -154,7 +154,7 @@ const run = async () => {
           if (minPrice) filter.price.$gte = Number(minPrice);
           if (maxPrice) filter.price.$lte = Number(maxPrice);
         }
-        let sortObj = {};
+        let sortObj = { createdAt: -1 };
         if (sort === 'price-asc') sortObj = { price: 1 };
         else if (sort === 'price-desc') sortObj = { price: -1 };
         else if (sort === 'latest') sortObj = { createdAt: -1 };
