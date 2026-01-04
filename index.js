@@ -57,7 +57,7 @@ const run = async () => {
     app.get('/featured-listing', async (req, res) => {
       const result = await listingCollections
         .find()
-        .limit(6)
+        .limit(8)
         .sort({ createdAt: -1 })
         .toArray();
       res.send(result);
@@ -81,7 +81,7 @@ const run = async () => {
     });
 
     // Get single property details secured
-    app.get('/listing/:id', secureApi, async (req, res) => {
+    app.get('/listing/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await listingCollections.findOne(query);
@@ -140,6 +140,7 @@ const run = async () => {
           minPrice,
           maxPrice,
           propertyName,
+          location,
           sort,
           _start,
           _limit,
@@ -152,9 +153,10 @@ const run = async () => {
         if (category && category !== 'All') {
           filter.category = category;
         }
-        if (propertyName) {
-          filter.propertyName = { $regex: propertyName, $options: 'i' };
+        if (location) {
+          filter.location = { $regex: location, $options: 'i' };
         }
+
         if (minPrice || maxPrice) {
           filter.price = {};
           if (minPrice) filter.price.$gte = Number(minPrice);
