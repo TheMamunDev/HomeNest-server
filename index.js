@@ -156,7 +156,9 @@ const run = async () => {
         if (location) {
           filter.location = { $regex: location, $options: 'i' };
         }
-
+        if (propertyName) {
+          filter.propertyName = { $regex: propertyName, $options: 'i' };
+        }
         if (minPrice || maxPrice) {
           filter.price = {};
           if (minPrice) filter.price.$gte = Number(minPrice);
